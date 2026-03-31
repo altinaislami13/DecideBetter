@@ -1,0 +1,56 @@
+# ========================
+# .NET / C# .gitignore
+# ========================
+
+# Build folders
+bin/
+obj/
+out/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# Rider / JetBrains
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment files
+.env
+.env.*
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Publish
+publish/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Test results
+TestResults/
+coverage/
+
+# Others
+*.cache
+*.db

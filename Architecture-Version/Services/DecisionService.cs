@@ -17,76 +17,167 @@ namespace DecideWise.Services
 
         public List<Option> GetAll(string? category = null)
         {
-            var options = _repository.GetAll();
+            try
+            {
+                var options = _repository.GetAll();
 
-            if (!string.IsNullOrWhiteSpace(category))
-                options = options
-                    .Where(o => o.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                if (!string.IsNullOrWhiteSpace(category))
+                {
+                    options = options
+                        .Where(o => o.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
 
-            return options;
+                return options;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Gabim gjatë marrjes së të dhënave: {ex.Message}");
+                return new List<Option>();
+            }
         }
 
-        // ✅ FIXED (nullable)
         public Option? GetById(int id)
         {
-            return _repository.GetById(id);
+            try
+            {
+                var option = _repository.GetById(id);
+
+                if (option == null)
+                {
+                    Console.WriteLine("Itemi nuk u gjet.");
+                }
+
+                return option;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Gabim gjatë kërkimit: {ex.Message}");
+                return null;
+            }
+        }
+
+        // ✅ FEATURE: Search
+        public List<Option> SearchByName(string name)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                    return new List<Option>();
+
+                return _repository.GetAll()
+                    .Where(o => o.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Gabim gjatë kërkimit: {ex.Message}");
+                return new List<Option>();
+            }
         }
 
         public void AddOption(Option option)
         {
-            Validate(option);
-            _repository.Add(option);
-            Log("Added option: " + option.Name);
+            try
+            {
+                Validate(option);
+                _repository.Add(option);
+                Log("Added option: " + option.Name);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Gabim: {ex.Message}");
+            }
         }
 
         public void UpdateOption(Option option)
         {
-            Validate(option);
-            _repository.Update(option);
-            Log("Updated option ID: " + option.Id);
+            try
+            {
+                Validate(option);
+                _repository.Update(option);
+                Log("Updated option ID: " + option.Id);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Gabim: {ex.Message}");
+            }
         }
 
         public void DeleteOption(int id)
         {
-            _repository.Delete(id);
-            Log("Deleted option ID: " + id);
+            try
+            {
+                _repository.Delete(id);
+                Log("Deleted option ID: " + id);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Gabim gjatë fshirjes: {ex.Message}");
+            }
         }
 
-        // ✅ FIXED (nullable)
         public Option? GetBestOption()
         {
-            return _repository.GetAll()
-                .OrderByDescending(o => o.ValueScore)
-                .FirstOrDefault();
+            try
+            {
+                return _repository.GetAll()
+                    .OrderByDescending(o => o.ValueScore)
+                    .FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Gabim gjatë llogaritjes: {ex.Message}");
+                return null;
+            }
         }
 
         public List<Option> GetTopOptions(int count = 3)
         {
-            return _repository.GetAll()
-                .OrderByDescending(o => o.ValueScore)
-                .Take(count)
-                .ToList();
+            try
+            {
+                return _repository.GetAll()
+                    .OrderByDescending(o => o.ValueScore)
+                    .Take(count)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Gabim gjatë renditjes: {ex.Message}");
+                return new List<Option>();
+            }
         }
 
         public void AddScore(int id, int score)
         {
-            var option = _repository.GetById(id);
-            if (option == null) return;
+            try
+            {
+                var option = _repository.GetById(id);
 
-            option.Score += score;
-            _repository.Update(option);
+                if (option == null)
+                {
+                    Console.WriteLine("Itemi nuk u gjet.");
+                    return;
+                }
 
-            Log($"Score added to {option.Name}");
+                option.Score += score;
+                _repository.Update(option);
+
+                Log($"Score added to {option.Name}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Gabim gjatë shtimit të pikëve: {ex.Message}");
+            }
         }
 
         private void Validate(Option option)
         {
             if (string.IsNullOrWhiteSpace(option.Name))
-                throw new ArgumentException("Name cannot be empty");
+                throw new ArgumentException("Emri nuk mund të jetë bosh");
 
             if (option.Price <= 0)
-                throw new ArgumentException("Price must be greater than 0");
+                throw new ArgumentException("Çmimi duhet të jetë më i madh se 0");
         }
 
         private void Log(string message)

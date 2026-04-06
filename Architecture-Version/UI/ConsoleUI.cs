@@ -1,7 +1,8 @@
-using Architecture_Version.Models;
-using Architecture_Version.Services;
+using System;
+using DecideWise.Models;
+using DecideWise.Services;
 
-namespace Architecture_Version.UI
+namespace DecideWise.UI
 {
     public class ConsoleUI
     {
@@ -25,7 +26,8 @@ namespace Architecture_Version.UI
                 Console.WriteLine("6. Best Option ⭐");
                 Console.WriteLine("7. Top 3 Options 🔥");
                 Console.WriteLine("8. Add Score");
-                Console.WriteLine("9. Exit");
+                Console.WriteLine("9. Search Option 🔍");
+                Console.WriteLine("0. Exit");
 
                 Console.Write("Choose: ");
                 var choice = Console.ReadLine();
@@ -40,8 +42,9 @@ namespace Architecture_Version.UI
                     case "6": BestOption(); break;
                     case "7": Top3(); break;
                     case "8": AddScore(); break;
-                    case "9": return;
-                    default: Console.WriteLine("Invalid choice!"); break;
+                    case "9": SearchOption(); break;
+                    case "0": return;
+                    default: Console.WriteLine("Zgjedhje e pavlefshme!"); break;
                 }
             }
         }
@@ -49,6 +52,12 @@ namespace Architecture_Version.UI
         private void ListOptions()
         {
             var options = _service.GetAll();
+
+            if (options.Count == 0)
+            {
+                Console.WriteLine("Nuk ka të dhëna.");
+                return;
+            }
 
             foreach (var o in options)
             {
@@ -67,7 +76,7 @@ namespace Architecture_Version.UI
             Console.Write("Price: ");
             if (!decimal.TryParse(Console.ReadLine(), out decimal price))
             {
-                Console.WriteLine("Invalid price!");
+                Console.WriteLine("Ju lutem shkruani numër valid!");
                 return;
             }
 
@@ -79,14 +88,18 @@ namespace Architecture_Version.UI
                 Score = 0
             };
 
-            _service.Add(option);
-            Console.WriteLine("Added successfully!");
+            _service.AddOption(option);
+            Console.WriteLine("U shtua me sukses!");
         }
 
         private void UpdateOption()
         {
             Console.Write("ID: ");
-            if (!int.TryParse(Console.ReadLine(), out int id)) return;
+            if (!int.TryParse(Console.ReadLine(), out int id))
+            {
+                Console.WriteLine("ID jo valid!");
+                return;
+            }
 
             Console.Write("New Name: ");
             var name = Console.ReadLine() ?? "";
@@ -95,7 +108,11 @@ namespace Architecture_Version.UI
             var category = Console.ReadLine() ?? "";
 
             Console.Write("New Price: ");
-            if (!decimal.TryParse(Console.ReadLine(), out decimal price)) return;
+            if (!decimal.TryParse(Console.ReadLine(), out decimal price))
+            {
+                Console.WriteLine("Çmimi jo valid!");
+                return;
+            }
 
             var option = new Option
             {
@@ -105,17 +122,21 @@ namespace Architecture_Version.UI
                 Price = price
             };
 
-            _service.Update(option);
-            Console.WriteLine("Updated!");
+            _service.UpdateOption(option);
+            Console.WriteLine("U përditësua!");
         }
 
         private void DeleteOption()
         {
             Console.Write("ID: ");
-            if (!int.TryParse(Console.ReadLine(), out int id)) return;
+            if (!int.TryParse(Console.ReadLine(), out int id))
+            {
+                Console.WriteLine("ID jo valid!");
+                return;
+            }
 
-            _service.Delete(id);
-            Console.WriteLine("Deleted!");
+            _service.DeleteOption(id);
+            Console.WriteLine("U fshi!");
         }
 
         private void FilterByCategory()
@@ -124,6 +145,12 @@ namespace Architecture_Version.UI
             var category = Console.ReadLine();
 
             var list = _service.GetAll(category);
+
+            if (list.Count == 0)
+            {
+                Console.WriteLine("Nuk u gjet asnjë rezultat.");
+                return;
+            }
 
             foreach (var o in list)
             {
@@ -137,7 +164,7 @@ namespace Architecture_Version.UI
 
             if (best == null)
             {
-                Console.WriteLine("No data!");
+                Console.WriteLine("Nuk ka të dhëna!");
                 return;
             }
 
@@ -146,7 +173,13 @@ namespace Architecture_Version.UI
 
         private void Top3()
         {
-            var list = _service.GetTop(3);
+            var list = _service.GetTopOptions(3);
+
+            if (list.Count == 0)
+            {
+                Console.WriteLine("Nuk ka të dhëna!");
+                return;
+            }
 
             foreach (var o in list)
             {
@@ -157,13 +190,41 @@ namespace Architecture_Version.UI
         private void AddScore()
         {
             Console.Write("ID: ");
-            if (!int.TryParse(Console.ReadLine(), out int id)) return;
+            if (!int.TryParse(Console.ReadLine(), out int id))
+            {
+                Console.WriteLine("ID jo valid!");
+                return;
+            }
 
             Console.Write("Score: ");
-            if (!int.TryParse(Console.ReadLine(), out int score)) return;
+            if (!int.TryParse(Console.ReadLine(), out int score))
+            {
+                Console.WriteLine("Score jo valid!");
+                return;
+            }
 
             _service.AddScore(id, score);
-            Console.WriteLine("Score added!");
+            Console.WriteLine("Score u shtua!");
+        }
+
+        // ✅ FEATURE: Search
+        private void SearchOption()
+        {
+            Console.Write("Shkruaj emrin: ");
+            var input = Console.ReadLine() ?? "";
+
+            var results = _service.SearchByName(input);
+
+            if (results.Count == 0)
+            {
+                Console.WriteLine("Nuk u gjet asnjë rezultat.");
+                return;
+            }
+
+            foreach (var o in results)
+            {
+                Console.WriteLine($"{o.Name} - {o.Price}€");
+            }
         }
     }
 }

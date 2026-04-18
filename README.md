@@ -158,6 +158,11 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 
 MIT License — see [LICENSE](LICENSE) for details.
 
+## 🚀 How to Run
+
+1. Clone repository
+2. Open solution in Visual Studio
+3. Build project:
 ---
 
 > Built with ❤️ to eliminate decision fatigue.

@@ -14,7 +14,7 @@ namespace DecideWise.Data
 
         public FileRepository(string filePath)
         {
-            _filePath = filePath;
+            _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _options = new List<Option>();
 
             LoadFromFile();
@@ -22,31 +22,37 @@ namespace DecideWise.Data
 
         private void LoadFromFile()
         {
+            if (!File.Exists(_filePath))
+            {
+                _options = new List<Option>();
+                Save(); // krijon file automatikisht
+                return;
+            }
+
             try
             {
-                if (!File.Exists(_filePath))
+                var json = File.ReadAllText(_filePath);
+
+                if (string.IsNullOrWhiteSpace(json))
                 {
-                    Console.WriteLine("File nuk u gjet, po krijoj file të ri...");
-                    File.WriteAllText(_filePath, "[]");
                     _options = new List<Option>();
                     return;
                 }
 
-                var json = File.ReadAllText(_filePath);
-
                 _options = JsonSerializer.Deserialize<List<Option>>(json)
                            ?? new List<Option>();
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Gabim gjatë leximit të file: {ex.Message}");
+                // file corrupted → reset
                 _options = new List<Option>();
+                Save();
             }
         }
 
         public List<Option> GetAll()
         {
-            return _options;
+            return _options.ToList(); // avoid external modification
         }
 
         public Option? GetById(int id)
@@ -56,75 +62,48 @@ namespace DecideWise.Data
 
         public void Add(Option item)
         {
-            try
-            {
-                item.Id = _options.Any() ? _options.Max(o => o.Id) + 1 : 1;
-                _options.Add(item);
-                Save();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë shtimit: {ex.Message}");
-            }
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
+
+            item.Id = _options.Any() ? _options.Max(o => o.Id) + 1 : 1;
+
+            _options.Add(item);
+            Save();
         }
 
         public void Update(Option item)
         {
-            try
-            {
-                var index = _options.FindIndex(o => o.Id == item.Id);
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
 
-                if (index == -1)
-                {
-                    Console.WriteLine("Itemi nuk u gjet për update.");
-                    return;
-                }
+            var index = _options.FindIndex(o => o.Id == item.Id);
 
-                _options[index] = item;
-                Save();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë update: {ex.Message}");
-            }
+            if (index == -1)
+                throw new KeyNotFoundException($"Option me ID {item.Id} nuk ekziston.");
+
+            _options[index] = item;
+            Save();
         }
 
         public void Delete(int id)
         {
-            try
-            {
-                var item = _options.FirstOrDefault(o => o.Id == id);
+            var item = _options.FirstOrDefault(o => o.Id == id);
 
-                if (item == null)
-                {
-                    Console.WriteLine("Itemi nuk u gjet për fshirje.");
-                    return;
-                }
+            if (item == null)
+                throw new KeyNotFoundException($"Option me ID {id} nuk ekziston.");
 
-                _options.Remove(item);
-                Save();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë fshirjes: {ex.Message}");
-            }
+            _options.Remove(item);
+            Save();
         }
 
-        public void Save()
+        private void Save()
         {
-            try
+            var json = JsonSerializer.Serialize(_options, new JsonSerializerOptions
             {
-                var json = JsonSerializer.Serialize(_options, new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
+                WriteIndented = true
+            });
 
-                File.WriteAllText(_filePath, json);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë ruajtjes në file: {ex.Message}");
-            }
+            File.WriteAllText(_filePath, json);
         }
     }
 }

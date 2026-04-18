@@ -12,177 +12,120 @@ namespace DecideWise.Services
 
         public DecisionService(IRepository<Option> repository)
         {
-            _repository = repository;
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         public List<Option> GetAll(string? category = null)
         {
-            try
+            var options = _repository.GetAll();
+
+            if (!string.IsNullOrWhiteSpace(category))
             {
-                var options = _repository.GetAll();
-
-                if (!string.IsNullOrWhiteSpace(category))
-                {
-                    options = options
-                        .Where(o => o.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-                }
-
-                return options;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë marrjes së të dhënave: {ex.Message}");
-                return new List<Option>();
-            }
-        }
-
-        public Option? GetById(int id)
-        {
-            try
-            {
-                var option = _repository.GetById(id);
-
-                if (option == null)
-                {
-                    Console.WriteLine("Itemi nuk u gjet.");
-                }
-
-                return option;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë kërkimit: {ex.Message}");
-                return null;
-            }
-        }
-
-        // ✅ FEATURE: Search
-        public List<Option> SearchByName(string name)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(name))
-                    return new List<Option>();
-
-                return _repository.GetAll()
-                    .Where(o => o.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
+                options = options
+                    .Where(o => o.Category != null &&
+                                o.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
                     .ToList();
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë kërkimit: {ex.Message}");
+
+            return options;
+        }
+
+        public Option GetById(int id)
+        {
+            if (id <= 0)
+                throw new ArgumentException("ID duhet të jetë më i madh se 0");
+
+            var option = _repository.GetById(id);
+
+            if (option == null)
+                throw new KeyNotFoundException($"Option me ID {id} nuk ekziston.");
+
+            return option;
+        }
+
+        // ✅ Search improvement
+        public List<Option> SearchByName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
                 return new List<Option>();
-            }
+
+            return _repository.GetAll()
+                .Where(o => !string.IsNullOrWhiteSpace(o.Name) &&
+                            o.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
 
         public void AddOption(Option option)
         {
-            try
-            {
-                Validate(option);
-                _repository.Add(option);
-                Log("Added option: " + option.Name);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim: {ex.Message}");
-            }
+            Validate(option);
+            _repository.Add(option);
         }
 
         public void UpdateOption(Option option)
         {
-            try
-            {
-                Validate(option);
-                _repository.Update(option);
-                Log("Updated option ID: " + option.Id);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim: {ex.Message}");
-            }
+            Validate(option);
+
+            var existing = _repository.GetById(option.Id);
+            if (existing == null)
+                throw new KeyNotFoundException($"Option me ID {option.Id} nuk ekziston.");
+
+            _repository.Update(option);
         }
 
         public void DeleteOption(int id)
         {
-            try
-            {
-                _repository.Delete(id);
-                Log("Deleted option ID: " + id);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë fshirjes: {ex.Message}");
-            }
+            if (id <= 0)
+                throw new ArgumentException("ID duhet të jetë më i madh se 0");
+
+            var existing = _repository.GetById(id);
+            if (existing == null)
+                throw new KeyNotFoundException($"Option me ID {id} nuk ekziston.");
+
+            _repository.Delete(id);
         }
 
         public Option? GetBestOption()
         {
-            try
-            {
-                return _repository.GetAll()
-                    .OrderByDescending(o => o.ValueScore)
-                    .FirstOrDefault();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë llogaritjes: {ex.Message}");
-                return null;
-            }
+            return _repository.GetAll()
+                .OrderByDescending(o => o.ValueScore)
+                .FirstOrDefault();
         }
 
         public List<Option> GetTopOptions(int count = 3)
         {
-            try
-            {
-                return _repository.GetAll()
-                    .OrderByDescending(o => o.ValueScore)
-                    .Take(count)
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë renditjes: {ex.Message}");
-                return new List<Option>();
-            }
+            if (count <= 0)
+                throw new ArgumentException("Count duhet të jetë më i madh se 0");
+
+            return _repository.GetAll()
+                .OrderByDescending(o => o.ValueScore)
+                .Take(count)
+                .ToList();
         }
 
         public void AddScore(int id, int score)
         {
-            try
-            {
-                var option = _repository.GetById(id);
+            if (score <= 0)
+                throw new ArgumentException("Score duhet të jetë pozitiv");
 
-                if (option == null)
-                {
-                    Console.WriteLine("Itemi nuk u gjet.");
-                    return;
-                }
+            var option = _repository.GetById(id);
 
-                option.Score += score;
-                _repository.Update(option);
+            if (option == null)
+                throw new KeyNotFoundException($"Option me ID {id} nuk ekziston.");
 
-                Log($"Score added to {option.Name}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Gabim gjatë shtimit të pikëve: {ex.Message}");
-            }
+            option.Score += score;
+            _repository.Update(option);
         }
 
         private void Validate(Option option)
         {
+            if (option == null)
+                throw new ArgumentNullException(nameof(option));
+
             if (string.IsNullOrWhiteSpace(option.Name))
                 throw new ArgumentException("Emri nuk mund të jetë bosh");
 
             if (option.Price <= 0)
                 throw new ArgumentException("Çmimi duhet të jetë më i madh se 0");
-        }
-
-        private void Log(string message)
-        {
-            Console.WriteLine($"[LOG {DateTime.Now}] {message}");
         }
     }
 }

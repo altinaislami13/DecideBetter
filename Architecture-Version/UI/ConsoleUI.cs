@@ -32,19 +32,26 @@ namespace DecideWise.UI
                 Console.Write("Choose: ");
                 var choice = Console.ReadLine();
 
-                switch (choice)
+                try
                 {
-                    case "1": ListOptions(); break;
-                    case "2": AddOption(); break;
-                    case "3": UpdateOption(); break;
-                    case "4": DeleteOption(); break;
-                    case "5": FilterByCategory(); break;
-                    case "6": BestOption(); break;
-                    case "7": Top3(); break;
-                    case "8": AddScore(); break;
-                    case "9": SearchOption(); break;
-                    case "0": return;
-                    default: Console.WriteLine("Zgjedhje e pavlefshme!"); break;
+                    switch (choice)
+                    {
+                        case "1": ListOptions(); break;
+                        case "2": AddOption(); break;
+                        case "3": UpdateOption(); break;
+                        case "4": DeleteOption(); break;
+                        case "5": FilterByCategory(); break;
+                        case "6": BestOption(); break;
+                        case "7": Top3(); break;
+                        case "8": AddScore(); break;
+                        case "9": SearchOption(); break;
+                        case "0": return;
+                        default: Console.WriteLine("Zgjedhje e pavlefshme!"); break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error: {ex.Message}");
                 }
             }
         }
@@ -53,7 +60,7 @@ namespace DecideWise.UI
         {
             var options = _service.GetAll();
 
-            if (options.Count == 0)
+            if (!options.Any())
             {
                 Console.WriteLine("Nuk ka të dhëna.");
                 return;
@@ -73,12 +80,7 @@ namespace DecideWise.UI
             Console.Write("Category: ");
             var category = Console.ReadLine() ?? "";
 
-            Console.Write("Price: ");
-            if (!decimal.TryParse(Console.ReadLine(), out decimal price))
-            {
-                Console.WriteLine("Ju lutem shkruani numër valid!");
-                return;
-            }
+            decimal price = ReadDecimal("Price");
 
             var option = new Option
             {
@@ -89,17 +91,12 @@ namespace DecideWise.UI
             };
 
             _service.AddOption(option);
-            Console.WriteLine("U shtua me sukses!");
+            Console.WriteLine("✅ U shtua me sukses!");
         }
 
         private void UpdateOption()
         {
-            Console.Write("ID: ");
-            if (!int.TryParse(Console.ReadLine(), out int id))
-            {
-                Console.WriteLine("ID jo valid!");
-                return;
-            }
+            int id = ReadInt("ID");
 
             Console.Write("New Name: ");
             var name = Console.ReadLine() ?? "";
@@ -107,12 +104,7 @@ namespace DecideWise.UI
             Console.Write("New Category: ");
             var category = Console.ReadLine() ?? "";
 
-            Console.Write("New Price: ");
-            if (!decimal.TryParse(Console.ReadLine(), out decimal price))
-            {
-                Console.WriteLine("Çmimi jo valid!");
-                return;
-            }
+            decimal price = ReadDecimal("New Price");
 
             var option = new Option
             {
@@ -123,20 +115,14 @@ namespace DecideWise.UI
             };
 
             _service.UpdateOption(option);
-            Console.WriteLine("U përditësua!");
+            Console.WriteLine("✅ U përditësua!");
         }
 
         private void DeleteOption()
         {
-            Console.Write("ID: ");
-            if (!int.TryParse(Console.ReadLine(), out int id))
-            {
-                Console.WriteLine("ID jo valid!");
-                return;
-            }
-
+            int id = ReadInt("ID");
             _service.DeleteOption(id);
-            Console.WriteLine("U fshi!");
+            Console.WriteLine("✅ U fshi!");
         }
 
         private void FilterByCategory()
@@ -146,7 +132,7 @@ namespace DecideWise.UI
 
             var list = _service.GetAll(category);
 
-            if (list.Count == 0)
+            if (!list.Any())
             {
                 Console.WriteLine("Nuk u gjet asnjë rezultat.");
                 return;
@@ -175,7 +161,7 @@ namespace DecideWise.UI
         {
             var list = _service.GetTopOptions(3);
 
-            if (list.Count == 0)
+            if (!list.Any())
             {
                 Console.WriteLine("Nuk ka të dhëna!");
                 return;
@@ -189,25 +175,13 @@ namespace DecideWise.UI
 
         private void AddScore()
         {
-            Console.Write("ID: ");
-            if (!int.TryParse(Console.ReadLine(), out int id))
-            {
-                Console.WriteLine("ID jo valid!");
-                return;
-            }
-
-            Console.Write("Score: ");
-            if (!int.TryParse(Console.ReadLine(), out int score))
-            {
-                Console.WriteLine("Score jo valid!");
-                return;
-            }
+            int id = ReadInt("ID");
+            int score = ReadInt("Score");
 
             _service.AddScore(id, score);
-            Console.WriteLine("Score u shtua!");
+            Console.WriteLine("✅ Score u shtua!");
         }
 
-        // ✅ FEATURE: Search
         private void SearchOption()
         {
             Console.Write("Shkruaj emrin: ");
@@ -215,7 +189,7 @@ namespace DecideWise.UI
 
             var results = _service.SearchByName(input);
 
-            if (results.Count == 0)
+            if (!results.Any())
             {
                 Console.WriteLine("Nuk u gjet asnjë rezultat.");
                 return;
@@ -225,6 +199,25 @@ namespace DecideWise.UI
             {
                 Console.WriteLine($"{o.Name} - {o.Price}€");
             }
+        }
+
+        // 🔧 Helper methods
+        private int ReadInt(string field)
+        {
+            Console.Write($"{field}: ");
+            if (!int.TryParse(Console.ReadLine(), out int value))
+                throw new ArgumentException($"{field} jo valid!");
+
+            return value;
+        }
+
+        private decimal ReadDecimal(string field)
+        {
+            Console.Write($"{field}: ");
+            if (!decimal.TryParse(Console.ReadLine(), out decimal value))
+                throw new ArgumentException($"{field} jo valid!");
+
+            return value;
         }
     }
 }

@@ -5,7 +5,7 @@
 - Shtova error handling në të gjitha shtresat (UI, Service, Repository)
 - Implementova ruajtjen dhe leximin nga file (JSON)
 - Shtova validim për input (çmimi, ID, emri)
-- - Krijova dhe ekzekutova 5 unit tests (të gjitha kalojnë)
+- Krijova dhe ekzekutova 5 unit tests (të gjitha kalojnë)
 
 ## Dëshmi (Output)
 - Programi lejon:

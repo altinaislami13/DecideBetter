@@ -25,7 +25,7 @@ namespace DecideWise.Data
             if (!File.Exists(_filePath))
             {
                 _options = new List<Option>();
-                Save(); // krijon file automatikisht
+                Save();
                 return;
             }
 
@@ -44,7 +44,6 @@ namespace DecideWise.Data
             }
             catch
             {
-                // file corrupted → reset
                 _options = new List<Option>();
                 Save();
             }
@@ -52,7 +51,7 @@ namespace DecideWise.Data
 
         public List<Option> GetAll()
         {
-            return _options.ToList(); // avoid external modification
+            return _options.ToList();
         }
 
         public Option? GetById(int id)
@@ -96,7 +95,7 @@ namespace DecideWise.Data
             Save();
         }
 
-        private void Save()
+        public void Save()
         {
             var json = JsonSerializer.Serialize(_options, new JsonSerializerOptions
             {

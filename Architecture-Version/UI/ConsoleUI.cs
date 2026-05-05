@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using DecideWise.Models;
 using DecideWise.Services;
 
@@ -15,21 +16,13 @@ namespace DecideWise.UI
 
         public void Start()
         {
+            ShowHeader();
+
             while (true)
             {
-                Console.WriteLine("\n=== MENU PREMIUM ===");
-                Console.WriteLine("1. List Options");
-                Console.WriteLine("2. Add Option");
-                Console.WriteLine("3. Update Option");
-                Console.WriteLine("4. Delete Option");
-                Console.WriteLine("5. Filter by Category");
-                Console.WriteLine("6. Best Option ⭐");
-                Console.WriteLine("7. Top 3 Options 🔥");
-                Console.WriteLine("8. Add Score");
-                Console.WriteLine("9. Search Option 🔍");
-                Console.WriteLine("0. Exit");
+                ShowMenu();
 
-                Console.Write("Choose: ");
+                Console.Write("Choose an option: ");
                 var choice = Console.ReadLine();
 
                 try
@@ -38,22 +31,59 @@ namespace DecideWise.UI
                     {
                         case "1": ListOptions(); break;
                         case "2": AddOption(); break;
-                        case "3": UpdateOption(); break;
-                        case "4": DeleteOption(); break;
+                        case "3": AddScore(); break;
+                        case "4": SearchOption(); break;
                         case "5": FilterByCategory(); break;
                         case "6": BestOption(); break;
                         case "7": Top3(); break;
-                        case "8": AddScore(); break;
-                        case "9": SearchOption(); break;
-                        case "0": return;
-                        default: Console.WriteLine("Zgjedhje e pavlefshme!"); break;
+                        case "8": UpdateOption(); break;
+                        case "9": DeleteOption(); break;
+                        case "10": LoadDemoScenario(); break;
+                        case "11": ShowSummary(); break;
+                        case "0":
+                            Console.WriteLine("\nThank you for using DecideWise!");
+                            return;
+                        default:
+                            Console.WriteLine("\n[ERROR] Invalid selection.\n");
+                            break;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Error: {ex.Message}");
+                    Console.WriteLine($"\n[ERROR] {ex.Message}\n");
                 }
+
+                Pause();
             }
+        }
+
+        private void ShowHeader()
+        {
+            Console.Clear();
+            Console.WriteLine("========================================================");
+            Console.WriteLine("        DECIDEWISE - INTELLIGENT DECISION SYSTEM        ");
+            Console.WriteLine("========================================================");
+            Console.WriteLine(" Compare alternatives, score them and find the best.");
+            Console.WriteLine(" Demo Presentation Version");
+            Console.WriteLine("========================================================\n");
+        }
+
+        private void ShowMenu()
+        {
+            Console.WriteLine("\n---------------------- MAIN MENU -----------------------");
+            Console.WriteLine("1. View All Options");
+            Console.WriteLine("2. Add New Option");
+            Console.WriteLine("3. Add Score to Option");
+            Console.WriteLine("4. Search Option");
+            Console.WriteLine("5. Filter by Category");
+            Console.WriteLine("6. Show Best Recommended Option");
+            Console.WriteLine("7. Show Top 3 Ranked Options");
+            Console.WriteLine("8. Update Existing Option");
+            Console.WriteLine("9. Delete Option");
+            Console.WriteLine("10. Load Demo Scenario");
+            Console.WriteLine("11. Show Decision Summary Report");
+            Console.WriteLine("0. Exit");
+            Console.WriteLine("--------------------------------------------------------");
         }
 
         private void ListOptions()
@@ -62,13 +92,16 @@ namespace DecideWise.UI
 
             if (!options.Any())
             {
-                Console.WriteLine("Nuk ka të dhëna.");
+                Console.WriteLine("\n[INFO] No options available.\n");
                 return;
             }
 
+            Console.WriteLine("\nID | NAME            | CATEGORY      | PRICE | SCORE | VALUE");
+            Console.WriteLine("---------------------------------------------------------------");
+
             foreach (var o in options)
             {
-                Console.WriteLine($"{o.Id} | {o.Name} | {o.Category} | {o.Price}€ | Score: {o.Score} | Value: {o.ValueScore:F2}");
+                Console.WriteLine($"{o.Id,-3}| {o.Name,-15}| {o.Category,-13}| {o.Price,-6}€| {o.Score,-6}| {o.ValueScore:F2}");
             }
         }
 
@@ -91,7 +124,7 @@ namespace DecideWise.UI
             };
 
             _service.AddOption(option);
-            Console.WriteLine("✅ U shtua me sukses!");
+            Console.WriteLine("\n[SUCCESS] Option added successfully.\n");
         }
 
         private void UpdateOption()
@@ -115,14 +148,14 @@ namespace DecideWise.UI
             };
 
             _service.UpdateOption(option);
-            Console.WriteLine("✅ U përditësua!");
+            Console.WriteLine("\n[SUCCESS] Option updated successfully.\n");
         }
 
         private void DeleteOption()
         {
             int id = ReadInt("ID");
             _service.DeleteOption(id);
-            Console.WriteLine("✅ U fshi!");
+            Console.WriteLine("\n[SUCCESS] Option deleted successfully.\n");
         }
 
         private void FilterByCategory()
@@ -134,13 +167,14 @@ namespace DecideWise.UI
 
             if (!list.Any())
             {
-                Console.WriteLine("Nuk u gjet asnjë rezultat.");
+                Console.WriteLine("\n[INFO] No matching category found.\n");
                 return;
             }
 
+            Console.WriteLine("\nFiltered Results:");
             foreach (var o in list)
             {
-                Console.WriteLine($"{o.Name} - {o.Price}€");
+                Console.WriteLine($"- {o.Name} | {o.Price}€ | Score: {o.Score}");
             }
         }
 
@@ -150,11 +184,14 @@ namespace DecideWise.UI
 
             if (best == null)
             {
-                Console.WriteLine("Nuk ka të dhëna!");
+                Console.WriteLine("\n[INFO] No data available.\n");
                 return;
             }
 
-            Console.WriteLine($"🏆 BEST: {best.Name} ({best.ValueScore:F2})");
+            Console.WriteLine("\n=================================================");
+            Console.WriteLine($" BEST RECOMMENDED OPTION: {best.Name}");
+            Console.WriteLine($" FINAL VALUE SCORE: {best.ValueScore:F2}");
+            Console.WriteLine("=================================================\n");
         }
 
         private void Top3()
@@ -163,50 +200,92 @@ namespace DecideWise.UI
 
             if (!list.Any())
             {
-                Console.WriteLine("Nuk ka të dhëna!");
+                Console.WriteLine("\n[INFO] No data available.\n");
                 return;
             }
 
+            Console.WriteLine("\nTOP 3 RANKED OPTIONS");
+            Console.WriteLine("--------------------");
+
             foreach (var o in list)
             {
-                Console.WriteLine($"🔥 {o.Name} ({o.ValueScore:F2})");
+                Console.WriteLine($"- {o.Name} ({o.ValueScore:F2})");
             }
         }
 
         private void AddScore()
         {
-            int id = ReadInt("ID");
+            int id = ReadInt("Option ID");
             int score = ReadInt("Score");
 
             _service.AddScore(id, score);
-            Console.WriteLine("✅ Score u shtua!");
+            Console.WriteLine("\n[SUCCESS] Score added successfully.\n");
         }
 
         private void SearchOption()
         {
-            Console.Write("Shkruaj emrin: ");
+            Console.Write("Enter name keyword: ");
             var input = Console.ReadLine() ?? "";
 
             var results = _service.SearchByName(input);
 
             if (!results.Any())
             {
-                Console.WriteLine("Nuk u gjet asnjë rezultat.");
+                Console.WriteLine("\n[INFO] No search results found.\n");
                 return;
             }
 
+            Console.WriteLine("\nSearch Results:");
             foreach (var o in results)
             {
-                Console.WriteLine($"{o.Name} - {o.Price}€");
+                Console.WriteLine($"- {o.Name} | {o.Category} | {o.Price}€");
             }
         }
 
-        // 🔧 Helper methods
+        private void LoadDemoScenario()
+        {
+            var existing = _service.GetAll();
+
+            if (existing.Any())
+            {
+                Console.WriteLine("\n[INFO] Demo data already exists. Skipping load.\n");
+                return;
+            }
+
+            _service.AddOption(new Option { Name = "Dell XPS", Category = "Laptop", Price = 1200, Score = 85 });
+            _service.AddOption(new Option { Name = "Lenovo ThinkPad", Category = "Laptop", Price = 1100, Score = 92 });
+            _service.AddOption(new Option { Name = "HP Pavilion", Category = "Laptop", Price = 980, Score = 80 });
+
+            Console.WriteLine("\n[SUCCESS] Demo scenario loaded successfully.\n");
+        }
+
+        private void ShowSummary()
+        {
+            var options = _service.GetAll();
+
+            if (!options.Any())
+            {
+                Console.WriteLine("\n[INFO] No data available.\n");
+                return;
+            }
+
+            var best = options.OrderByDescending(o => o.ValueScore).First();
+            var cheapest = options.OrderBy(o => o.Price).First();
+            var avgScore = options.Average(o => o.Score);
+
+            Console.WriteLine("\n============= DECISION SUMMARY =============");
+            Console.WriteLine($"Total Options: {options.Count}");
+            Console.WriteLine($"Average Score: {avgScore:F2}");
+            Console.WriteLine($"Cheapest Option: {cheapest.Name} ({cheapest.Price}€)");
+            Console.WriteLine($"Best Option: {best.Name} ({best.ValueScore:F2})");
+            Console.WriteLine("============================================\n");
+        }
+
         private int ReadInt(string field)
         {
             Console.Write($"{field}: ");
             if (!int.TryParse(Console.ReadLine(), out int value))
-                throw new ArgumentException($"{field} jo valid!");
+                throw new ArgumentException($"{field} is invalid.");
 
             return value;
         }
@@ -215,9 +294,15 @@ namespace DecideWise.UI
         {
             Console.Write($"{field}: ");
             if (!decimal.TryParse(Console.ReadLine(), out decimal value))
-                throw new ArgumentException($"{field} jo valid!");
+                throw new ArgumentException($"{field} is invalid.");
 
             return value;
+        }
+
+        private void Pause()
+        {
+            Console.WriteLine("\nPress ENTER to continue...");
+            Console.ReadLine();
         }
     }
 }
